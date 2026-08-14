@@ -1,0 +1,98 @@
+{
+  "$schema": "../../tutor-mcp/config.schema.json",
+  "exo": "react-watches",
+  "stack": "react",
+  "test_command": "npm test --silent",
+  "test_filter_flag": "--",
+  "api_contract_path": "API.md",
+  "todos": [
+    {
+      "id": "format_price_eur",
+      "title": "formatPriceEur, formatage prix avec espaces ASCII",
+      "summary": "Formater un nombre en euros : '12 000 €', séparateurs de milliers en espaces ASCII (pas insécables).",
+      "files": ["src/utils/price.ts"],
+      "test_files": ["src/utils/price.test.ts"],
+      "hints": {
+        "1": "Lis les exemples du JSDoc en tête de la fonction. Les tests comparent par égalité stricte de chaîne, donc le caractère séparateur de milliers compte au bit près.",
+        "2": "Le piège classique est `Intl.NumberFormat('fr-FR', …)` : il insère un espace insécable U+00A0, pas un espace ASCII. Les tests veulent un espace ASCII normal. Construis la chaîne toi-même à partir de `amount.toString()`. Le suffixe est ` €` (espace + €).",
+        "3": "Pseudo-code :\n  - convertir le montant en chaîne\n  - insérer un espace ASCII tous les 3 chiffres, en comptant depuis la droite\n  - suffixer une espace puis le symbole €\n  - retourner le résultat\n\nUne expression régulière avec assertion avant permet de faire l'insertion en\nune passe, mais une boucle depuis la fin de la chaîne fait tout aussi bien."
+      }
+    },
+    {
+      "id": "calculate_cart_total",
+      "title": "calculateCartTotal, somme des sous-totaux du panier",
+      "summary": "Réduire un tableau de CartItem en somme de `priceEur × quantity`.",
+      "files": ["src/utils/price.ts"],
+      "test_files": ["src/utils/price.test.ts"],
+      "hints": {
+        "1": "Le sous-total d'une ligne est `priceEur × quantity`. Le total du panier est la somme de tous les sous-totaux. Cas vides : panier vide → 0.",
+        "2": "L'idiome attendu est une réduction sur le tableau des lignes du panier, avec\n0 comme valeur initiale, ce qui traite naturellement le cas du panier vide,\nsans condition particulière.\n\nPour chaque ligne, la contribution au total est le prix unitaire de la montre\nmultiplié par la quantité de cette ligne. Pas besoin de boucle `for` ni de\nmutation d'un accumulateur externe.",
+        "3": "Pseudo-code :\n  réduire le tableau des lignes en partant de 0, en ajoutant à chaque tour le\n    produit du prix unitaire de la montre par la quantité de la ligne\n  retourner l'accumulateur"
+      }
+    },
+    {
+      "id": "use_watches_hook",
+      "title": "useWatches, hook qui charge les montres au montage",
+      "summary": "État `{ watches, loading, error, reload }`. Charge via `fetchWatches()` au mount, expose `reload()` qui ré-tente.",
+      "files": ["src/hooks/useWatches.ts"],
+      "test_files": ["src/hooks/useWatches.test.tsx"],
+      "hints": {
+        "1": "Trois états : `watches` (Watch[]), `loading` (bool), `error` (string|null). Au montage : loading=true → fetch → succès met watches, échec met error. Toujours loading=false à la fin.",
+        "2": "Structure :\n  - trois états locaux : la liste (vide), le chargement (vrai), l'erreur (nulle)\n  - une fonction de chargement qui lève le drapeau de chargement, efface\n    l'erreur, appelle la fonction d'API et bascule selon succès ou échec\n  - cette fonction doit être mémoïsée avec un tableau de dépendances vide,\n    sans quoi sa référence change à chaque rendu\n  - un effet qui la déclenche au montage\n\nSans la mémoïsation, l'effet se redéclenche à chaque rendu et le hook boucle.",
+        "3": "Pseudo-code :\n  trois états locaux : la liste (vide au départ), un booléen de chargement\n    (vrai au départ), un message d'erreur (nul au départ)\n  une fonction `reload`, mémoïsée avec un tableau de dépendances VIDE :\n      repasser le chargement à vrai et l'erreur à nul\n      appeler fetchWatches()\n      succès  -> ranger le résultat dans la liste\n      échec   -> ranger le message de l'exception dans l'erreur\n      dans tous les cas -> repasser le chargement à faux\n  un effet qui appelle `reload` au montage, avec `reload` en dépendance\n  retourner les trois états, plus `reload`\n\nSans la mémoïsation, `reload` change de référence à chaque rendu, l'effet se\nredéclenche, et le hook boucle indéfiniment."
+      }
+    },
+    {
+      "id": "watch_card",
+      "title": "WatchCard, carte d'affichage d'une montre",
+      "summary": "Brand dans h3, model dans p, prix formaté dans span[data-testid='price'], bouton qui appelle onAddToCart sauf si en rupture.",
+      "files": ["src/components/WatchCard.tsx"],
+      "test_files": ["src/components/WatchCard.test.tsx"],
+      "hints": {
+        "1": "Tous les emplacements sont déjà marqués TODO dans le JSX. Vous n'avez qu'à les remplir avec les bonnes interpolations. Le label du bouton doit littéralement contenir 'Ajouter au panier' ou 'Rupture' (insensible à la casse).",
+        "2": "Les emplacements à remplir, dans l'ordre du squelette :\n  - le titre de niveau 3 reçoit la marque de la montre\n  - le paragraphe reçoit son modèle\n  - l'élément porteur de data-testid=\"price\" reçoit le prix passé par la\n    fonction de formatage déjà importée\n  - le gestionnaire de clic remonte la montre au callback reçu en prop\n  - le bouton est désactivé quand le stock est nul\n  - son libellé est « Rupture » en rupture, « Ajouter au panier » sinon\n\nLe bouton étant déjà désactivé en rupture, inutile de retester la condition\ndans le gestionnaire.",
+        "3": "Le squelette laisse 6 emplacements TODO. Ce que chacun doit produire :\n  1. la marque de la montre\n  2. son modèle\n  3. son prix, passé par la fonction de formatage importée en tête de fichier\n  4. dans le gestionnaire de clic, l'appel du callback de prop avec la montre\n  5. l'état désactivé du bouton, lié à la rupture de stock\n  6. le libellé du bouton, par un ternaire sur cette même rupture"
+      }
+    },
+    {
+      "id": "api_get_update",
+      "title": "api/watches.ts, getWatch + updateWatch",
+      "summary": "Deux fonctions HTTP : GET /api/watches/{id} et PATCH /api/watches/{id} avec body partiel.",
+      "files": ["src/api/watches.ts"],
+      "test_files": ["src/api/watches.test.ts"],
+      "hints": {
+        "1": "Calquez le pattern de `fetchWatches` (GET) et `purchaseWatch` (POST) déjà dans le fichier. Pour `getWatch`, c'est un GET simple. Pour `updateWatch`, c'est un PATCH avec body JSON. Le test remplace `fetch` et inspecte l'appel réel : méthode, URL, en-têtes et body comptent.",
+        "2": "Pour `getWatch(id)` : une requête sur l'URL de la montre, sans options\nparticulières puisque GET est le défaut. Vérifiez le drapeau de succès de la\nréponse ; s'il est faux, levez une Error mentionnant le status, sinon\nretournez le corps désérialisé, typé en `Promise<Watch>`.\n\nPour `updateWatch(id, partial)` : même URL, mais avec la méthode de mise à\njour partielle, l'en-tête déclarant du JSON, et le partiel sérialisé comme\ncorps. En cas d'échec, tentez de lire le corps d'erreur du backend, sa forme\nest décrite dans API.md, et utilisez son message ; le corps pouvant ne pas\nêtre du JSON, prévoyez un repli sur un message contenant le status.",
+        "3": "Pseudo-code :\n  getWatch(id)\n    appeler fetch sur l'URL de la montre (sans options : GET est le défaut)\n    si la réponse n'est pas `ok` -> lever une Error mentionnant le status\n    sinon renvoyer le JSON de la réponse\n\n  updateWatch(id, partial)\n    appeler fetch sur cette même URL, avec :\n      - la méthode PATCH\n      - l'en-tête Content-Type application/json\n      - le partiel reçu, sérialisé tel quel, comme body\n    si la réponse n'est pas `ok` :\n      tenter de lire le JSON d'erreur en neutralisant l'échec de lecture\n        (le body peut ne pas être du JSON du tout)\n      lever une Error portant le champ `error` de ce body s'il existe,\n        sinon un message générique contenant le status\n    sinon renvoyer le JSON de la réponse"
+      }
+    },
+    {
+      "id": "use_watch_hook",
+      "title": "useWatch, hook qui charge UNE montre par id",
+      "summary": "État `{ watch, loading, error }`. Recharge quand `id` change. Gère la race condition.",
+      "files": ["src/hooks/useWatch.ts"],
+      "test_files": ["src/hooks/useWatch.test.tsx"],
+      "hints": {
+        "1": "Calquez le pattern de `useWatches` (déjà implémenté) mais pour UNE seule montre. Différence clé : la dépendance du `useEffect` est `[id]`, quand l'id change, le hook relance le fetch.",
+        "2": "Structure :\n  - trois états locaux : la montre (nulle), le chargement (vrai), l'erreur (nulle)\n  - un effet dépendant de `id`\n  - dans cet effet : remettre les trois états à leur valeur de départ, appeler\n    la fonction d'API de lecture unitaire, basculer selon succès ou échec, et\n    relâcher le chargement dans tous les cas\n\nProtection contre la course : déclarez un drapeau local dans l'effet, basculez-le\ndans la fonction de nettoyage, et testez-le avant chaque écriture d'état. Cela\névite qu'une réponse en retard écrase la plus récente quand `id` change.",
+        "3": "Pseudo-code :\n  trois états locaux : la montre (nulle au départ), un booléen de chargement\n    (vrai au départ), un message d'erreur (nul au départ)\n  un effet dépendant de `id` :\n      déclarer un drapeau local « annulé », faux au départ\n      remettre l'état de départ : chargement à vrai, erreur et montre à nul\n      appeler getWatch(id)\n        succès  -> si non annulé, ranger la montre\n        échec   -> si non annulé, ranger le message de l'exception\n        finally -> si non annulé, repasser le chargement à faux\n      retourner une fonction de nettoyage qui bascule le drapeau à « annulé »\n  retourner les trois états\n\nLe drapeau couvre le cas où `id` change pendant qu'une requête est en vol :\nsans lui, la réponse en retard écrase la plus récente."
+      }
+    },
+    {
+      "id": "watch_edit_form_submit",
+      "title": "WatchEditForm.handleSubmit, submit du formulaire d'édition",
+      "summary": "Appeler updateWatch, gérer succès/échec, basculer submitting/error.",
+      "files": ["src/components/WatchEditForm.tsx"],
+      "test_files": ["src/components/WatchEditForm.test.tsx"],
+      "hints": {
+        "1": "Le squelette pose tout : 4 useState (priceEur, stock, submitting, error), `isDirty`, le JSX complet (inputs contrôlés, bouton avec label dynamique, message d'alert). Vous n'avez qu'à remplir le corps de `handleSubmit`.\n\nLa fonction est déjà `async` et `e.preventDefault()` est attendu en première ligne.",
+        "2": "Plan :\n  - neutraliser le comportement par défaut du formulaire\n  - marquer la soumission en cours et effacer l'erreur précédente\n  - dans un bloc protégé, appeler la mise à jour avec l'id de la montre\n    initiale et les valeurs courantes du prix et du stock, puis remonter la\n    montre retournée au parent\n  - en cas d'exception, ranger son message dans l'erreur et ne rien remonter\n  - dans tous les cas, lever l'indicateur de soumission\n\nC'est ce dernier point qui compte : sans clause finale, le bouton resterait\nbloqué sur « Enregistrement… » après un échec.",
+        "3": "Pseudo-code :\n  empêcher le rechargement de page par défaut du formulaire\n  passer l'état de soumission à vrai, l'erreur à nul\n  try :\n      appeler updateWatch avec l'id de la montre initiale et un objet portant\n        le prix et le stock courants\n      remonter la montre retournée au parent via le callback onSaved\n  catch :\n      ranger le message de l'exception dans l'erreur, sans appeler onSaved\n  finally :\n      repasser l'état de soumission à faux"
+      }
+    }
+  ],
+  "sandbox": {
+    "allowed_paths": ["src", "README.md", "API.md", "package.json", ".tutor", "vite.config.ts", "tsconfig.json", "jest.config.cjs"],
+    "denied_patterns": ["node_modules", "-solution", "/.git/", "/dist/", "/build/"]
+  }
+}

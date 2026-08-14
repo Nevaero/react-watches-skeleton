@@ -12,7 +12,7 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals"]
   },
   "include": ["src", "vitest.setup.ts", "vite.config.ts"]
 }
